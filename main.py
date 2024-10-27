@@ -90,20 +90,38 @@ if __name__ == "__main__":
 
     df = load_pkl_data()
     key_pair = df["cat.Aeng"].unique()
-    questions = [
-        inquirer.List(
-            "Topic",
-            message=" Choosea Topic to analyze:",
-            choices=[*key_pair],
-        ),
-    ]
 
-    answer = inquirer.prompt(questions)["Topic"]
-    print(f"\033[93mAnalyzing data for {answer}...\033[0m", flush=True)
+    questions_topic = [
+    inquirer.List(
+        "Topic",
+        message="Choose a Topic to analyze:",
+        choices=[*key_pair],
+    ),
+]
 
-    price_by_month_and_amount(df, answer)
+answer_topic = inquirer.prompt(questions_topic)["Topic"]
 
-    r_correlation(df, answer)
+# Prompt user to choose functions to call
+questions_functions = [
+    inquirer.Checkbox(
+        "Functions",
+        message="Select functions to call:",
+        choices=[
+            ("Price by Month and Amount", "price_by_month_and_amount"),
+            ("Correlation Analysis", "r_correlation"),
+        ],
+    ),
+]
+
+answer_functions = inquirer.prompt(questions_functions)["Functions"]
+print(f"\033[93mAnalyzing data for {answer_topic}...\033[0m", flush=True)
+
+# Call the selected functions
+if "price_by_month_and_amount" in answer_functions:
+    price_by_month_and_amount(df, answer_topic)
+
+if "r_correlation" in answer_functions:
+    r_correlation(df, answer_topic)
 
     
     # print(df["cat.Aeng"].value_counts())
