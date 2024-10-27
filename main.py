@@ -5,6 +5,7 @@ import datetime as dt
 import seaborn as sns
 from scipy.stats import pearsonr
 from sklearn.linear_model import LinearRegression
+import inquirer
 
 def load_csv_data(PATH:str = "POS2024.csv") -> pd.DataFrame:
     first = dt.datetime.now()
@@ -47,17 +48,17 @@ def price_by_month_and_amount(df:pd.DataFrame, type:str = "Beef"):
     plt.grid(True)
     plt.show()
 
-def r_correlation(df:pd.DataFrame, type:str = "Beef"):
-    # Filter dataset to include only rows where cat.Aeng is "Beef"
+def r_correlation(df:pd.DataFrame, type:str = "Beef", year:int = None, month:int = None):
     data = df[df["cat.Aeng"] == type].copy()
+    
+    if year is not None and month is not None:
+        data = data[(data["year"] < year) | ((data["year"] == year) & (data["month"] <= month))]
 
-    # Calculate the per-unit price
     data["per_unit_price"] = data["total.YENsales"] / data["num.sales"]
 
-    # Drop rows with NaN values in "per_unit_price" or "num.sales"
     data.dropna(subset=["per_unit_price", "num.sales"], inplace=True)
 
-    # Check if data exists after dropping NaN values
+
     if not data.empty:
         # Calculate correlation
         correlation, _ = pearsonr(data["per_unit_price"], data["num.sales"])
@@ -88,24 +89,26 @@ if __name__ == "__main__":
     print("\033[93mStarting data processing...\033[0m", flush=True)
 
     df = load_pkl_data()
+    key_pair = df["cat.Aeng"].unique()
+    questions = [
+        inquirer.List(
+            "Topic",
+            message=" Choosea Topic to analyze:",
+            choices=[*key_pair],
+        ),
+    ]
 
-    price_by_month_and_amount(df, "Pork")
-    r_correlation(df, "Pork")
+    answer = inquirer.prompt(questions)["Topic"]
+    print(f"\033[93mAnalyzing data for {answer}...\033[0m", flush=True)
 
-    # print(df.columns)
-    # print(df["cat.Aeng"])
+    price_by_month_and_amount(df, answer)
 
-    # i = 0
-    # for row in df["cat.Aeng"]:
-    #     if row == "Beef":
-    #         i += 1
-    # print(i)
+    r_correlation(df, answer)
+
     
     # print(df["cat.Aeng"].value_counts())
             
     
-
-
     print("\033[93mEnding process\033[0m", flush=True)
 
 
