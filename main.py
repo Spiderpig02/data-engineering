@@ -83,6 +83,41 @@ def r_correlation(df:pd.DataFrame, type:str = "Beef", year:int = None, month:int
     else:
         print("No data available after removing NaN values.")
 
+def predict_future_price(df:pd.DataFrame, type:str = "Beef", months:int = 6):
+    data = df[df["cat.Aeng"] == type].copy()
+    data["per_unit_price"] = data["total.YENsales"] / data["num.sales"]
+    data["date"] = pd.to_datetime(data[["year", "month"]].assign(day=1))
+    data = data.sort_values("date")
+
+    # Drop rows with NaN values in 'per_unit_price'
+    data = data.dropna(subset=["per_unit_price"])
+
+    # Prepare the data for linear regression
+    data["month_num"] = np.arange(len(data))
+    X = data["month_num"].values.reshape(-1, 1)
+    y = data["per_unit_price"].values
+
+    # Train the linear regression model
+    model = LinearRegression()
+    model.fit(X, y)
+
+    # Predict future prices
+    future_months = np.arange(len(data), len(data) + months).reshape(-1, 1)
+    future_prices = model.predict(future_months)
+
+    # Plot the historical and predicted prices
+    plt.figure(figsize=(10, 6))
+    plt.plot(data["date"], data["per_unit_price"], label="Historical Prices")
+    future_dates = pd.date_range(start=data["date"].iloc[-1], periods=months + 1, freq='ME')[1:]
+    plt.plot(future_dates, future_prices, label="Predicted Prices", linestyle='--')
+    plt.title(f'Price Prediction for {type} for the Next {months} Months')
+    plt.xlabel('Date')
+    plt.ylabel('Per-Unit Price (YEN)')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
 
 if __name__ == "__main__":
     
@@ -99,29 +134,41 @@ if __name__ == "__main__":
     ),
 ]
 
-answer_topic = inquirer.prompt(questions_topic)["Topic"]
+    answer_topic = inquirer.prompt(questions_topic)["Topic"]
 
-# Prompt user to choose functions to call
-questions_functions = [
-    inquirer.Checkbox(
-        "Functions",
-        message="Select functions to call:",
-        choices=[
-            ("Price by Month and Amount", "price_by_month_and_amount"),
-            ("Correlation Analysis", "r_correlation"),
-        ],
-    ),
-]
+    # Prompt user to choose functions to call
+    questions_functions = [
+        inquirer.Checkbox(
+            "Functions",
+            message="Select functions to call:",
+            choices=[
+                ("Price by Month and Amount", "price_by_month_and_amount"),
+                ("Correlation Analysis", "r_correlation"),
+                ("Predict Future Price", "predict_future_price"),
+            ],
+        ),
+    ]
 
-answer_functions = inquirer.prompt(questions_functions)["Functions"]
-print(f"\033[93mAnalyzing data for {answer_topic}...\033[0m", flush=True)
+    answer_functions = inquirer.prompt(questions_functions)["Functions"]
+    print(f"\033[93mAnalyzing data for {answer_topic}...\033[0m", flush=True)
 
-# Call the selected functions
-if "price_by_month_and_amount" in answer_functions:
-    price_by_month_and_amount(df, answer_topic)
+    # Call the selected functions
+    if "price_by_month_and_amount" in answer_functions:
+        price_by_month_and_amount(df, answer_topic)
 
-if "r_correlation" in answer_functions:
-    r_correlation(df, answer_topic)
+    if "r_correlation" in answer_functions:
+        r_correlation(df, answer_topic)
+
+    if "predict_future_price" in answer_functions:
+            questions_months = [
+                inquirer.Text(
+                    "Months",
+                    message="Enter the number of months to predict",
+                    validate=lambda _, x: x.isdigit() and int(x) > 0,
+                ),
+            ]
+            answer_months = int(inquirer.prompt(questions_months)["Months"])
+            predict_future_price(df, answer_topic, answer_months)
 
     
     # print(df["cat.Aeng"].value_counts())
