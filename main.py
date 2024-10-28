@@ -152,23 +152,26 @@ if __name__ == "__main__":
     answer_functions = inquirer.prompt(questions_functions)["Functions"]
     print(f"\033[93mAnalyzing data for {answer_topic}...\033[0m", flush=True)
 
-    # Call the selected functions
-    if "price_by_month_and_amount" in answer_functions:
-        price_by_month_and_amount(df, answer_topic)
+    try: 
+        # Call the selected functions
+        if "price_by_month_and_amount" in answer_functions:
+            price_by_month_and_amount(df, answer_topic)
 
-    if "r_correlation" in answer_functions:
-        r_correlation(df, answer_topic)
+        if "r_correlation" in answer_functions:
+            r_correlation(df, answer_topic)
 
-    if "predict_future_price" in answer_functions:
-            questions_months = [
-                inquirer.Text(
-                    "Months",
-                    message="Enter the number of months to predict",
-                    validate=lambda _, x: x.isdigit() and int(x) > 0,
-                ),
-            ]
-            answer_months = int(inquirer.prompt(questions_months)["Months"])
-            predict_future_price(df, answer_topic, answer_months)
+        if "predict_future_price" in answer_functions:
+                questions_months = [
+                    inquirer.Text(
+                        "Months",
+                        message="Enter the number of months to predict",
+                        validate=lambda _, x: x.isdigit() and int(x) > 0,
+                    ),
+                ]
+                answer_months = int(inquirer.prompt(questions_months)["Months"])
+                predict_future_price(df, answer_topic, answer_months)
+    except Exception as e:
+        print("\033[91mThe chosen data does not support generating the selected content.\nPlease choose another topic.\033[0m", flush=True)
 
     
     # print(df["cat.Aeng"].value_counts())
